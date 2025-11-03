@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // User Entity
 type User struct {
@@ -15,4 +18,28 @@ type User struct {
 	DeleteFlag        bool      `json:"delete_flag"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+// NewUser コンストラクタ
+func NewUser(name, email, hashedPassword, bio string) (*User, error) {
+	// 必須入力チェック（不変的チェック）
+	if name == "" {
+		return nil, errors.New("name is required")
+	}
+	if email == "" {
+		return nil, errors.New("email is required")
+	}
+	if hashedPassword == "" {
+		return nil, errors.New("password is required")
+	}
+
+	// Entity生成
+	return &User{
+		Name:      name,
+		Email:     email,
+		Password:  hashedPassword,
+		Bio:       bio,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}, nil
 }
