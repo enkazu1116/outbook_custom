@@ -4,6 +4,8 @@ import (
 	userEntity "app/internal/domain/user/entity"
 	userRepository "app/internal/domain/user/repository"
 	"context"
+	"errors"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -19,19 +21,18 @@ func NewUserRepository(db *gorm.DB) userRepository.UserRepository {
 	return &UserRepositoryImpl{db: db}
 }
 
-// リポジトリ実装層
-// ユーザー作成
-// 引数: コンテキスト, ユーザーエンティティ
-// 返り値: エラー
+// CreateUser はユーザーを新規登録します。
+// 引数: コンテキスト, 登録するユーザーエンティティ
+// 返り値: 永続化に失敗した場合はエラー
 // レシーバー: ユーザーリポジトリオブジェクト
 func (r *UserRepositoryImpl) CreateUser(cxt context.Context, user *userEntity.User) error {
 
 	return r.db.WithContext(cxt).Create(user).Error
 }
 
-// 登録メールアドレス重複チェック
-// 引数: コンテキスト, メールアドレス
-// 返り値: 重複チェック結果, エラー
+// ExistsByEmail はメールアドレスの重複を確認します。
+// 引数: コンテキスト, 確認対象のメールアドレス
+// 返り値: true=重複あり, false=重複なし, 判定に失敗した場合はエラー
 // レシーバー: ユーザーリポジトリオブジェクト
 func (r *UserRepositoryImpl) ExistsByEmail(cxt context.Context, email string) (bool, error) {
 
@@ -45,34 +46,56 @@ func (r *UserRepositoryImpl) ExistsByEmail(cxt context.Context, email string) (b
 	return count > 0, nil
 }
 
-// ユーザー検索
-// 引数: コンテキスト, id, name, email
-// 返り値: ユーザーエンティティ, エラー
+// FindByUser は指定した条件のいずれかに一致するユーザーを取得します。
+// 引数: コンテキスト, 検索条件としてのID/名前/メールアドレス（空文字は無視）
+// 返り値: 一致したユーザー, 見つからない/検索に失敗した場合はエラー
 // レシーバー: ユーザーリポジトリオブジェクト
 func (r *UserRepositoryImpl) FindByUser(cxt context.Context, id string, name string, email string) (*userEntity.User, error) {
 
-	u := &userEntity.User{}
+	conditions := make([]string, 0, 3)
+	values := make([]interface{}, 0, 3)
 
-	// ユーザー検索
-	// 検索条件: id, name, emailいずれかが一致するユーザーを取得
+	if id != "" {
+		conditions = append(conditions, "id = ?")
+		values = append(values, id)
+	}
+	if name != "" {
+		conditions = append(conditions, "name = ?")
+		values = append(values, name)
+	}
+	if email != "" {
+		conditions = append(conditions, "email = ?")
+		values = append(values, email)
+	}
+
+	if len(conditions) == 0 {
+		return nil, errors.New("no search criteria provided")
+	}
+
+	var u userEntity.User
 	err := r.db.WithContext(cxt).
 		Model(&userEntity.User{}).
-		Where("id = ? OR name = ? OR email = ?", id, name, email).
-		First(u).Error
-
-	// エラーが発生した場合はnilを返す
+		Where(strings.Join(conditions, " OR "), values...).
+		First(&u).Error
 	if err != nil {
 		return nil, err
 	}
-	return u, nil
+
+	return &u, nil
 }
 
-// ユーザー更新
+// UpdateUser は既存ユーザー情報を更新します。
+// 引数: コンテキスト, 更新後のユーザーエンティティ（ID必須）
+// 返り値: 更新に失敗した場合はエラー
+// レシーバー: ユーザーリポジトリオブジェクト
 func (r *UserRepositoryImpl) UpdateUser(cxt context.Context, user *userEntity.User) error {
 	return r.db.WithContext(cxt).Model(&userEntity.User{}).Where("id = ?", user.ID).Updates(user).Error
 }
 
-// ユーザー削除
+// DeleteUser は指定したユーザーを削除します。
+// 引数: コンテキスト, 削除対象ID
+// 返り値: 削除に失敗した場合はエラー
+// レシーバー: ユーザーリポジトリオブジェクト
 func (r *UserRepositoryImpl) DeleteUser(cxt context.Context, id string) error {
 	return r.db.WithContext(cxt).Model(&userEntity.User{}).Where("id = ?", id).Delete(&userEntity.User{}).Error
 }
