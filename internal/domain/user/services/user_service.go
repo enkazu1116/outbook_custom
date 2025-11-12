@@ -15,9 +15,10 @@ var ErrorMessage = map[string]string{
 	"password_length": "パスワードは8文字以上で入力してください。",
 	"password_format": "パスワードは半角英数字で入力してください。",
 	"bio_length":      "自己紹介文は255文字以内で入力してください。",
+	"search_required": "検索条件を1つ以上指定してください。",
 }
 
-// ユーザー作成バリデーション
+// CreateUserValidation はユーザー作成時の入力チェックを行います。
 func CreateUserValidation(ctx context.Context, name string, email string, password string, bio string) error {
 
 	// 必須入力項目のチェック
@@ -42,5 +43,16 @@ func CreateUserValidation(ctx context.Context, name string, email string, passwo
 	}
 
 	// エラーがない場合はnilを返す
+	return nil
+}
+
+// FindUserValidation はユーザー検索時の入力チェックを行います。
+func FindUserValidation(ctx context.Context, id string, name string, email string) error {
+
+	// 検索条件が1つも指定されていない場合はエラー
+	if id == "" && name == "" && email == "" {
+		return errors.New(ErrorMessage["search_required"])
+	}
+
 	return nil
 }
