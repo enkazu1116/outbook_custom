@@ -5,22 +5,27 @@ FROM golang:${GO_VERSION}-bookworm AS builder
 ENV GOMODCACHE=/root/.cache/go-build
 WORKDIR /src
 
+# C依存の導入（mountは使わない）
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libc6-dev \
+    libsqlite3-dev
+
 # 依存のダウンロード
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=bind,source=backend/go.mod,target=go.mod \
-    --mount=type=bind,source=backend/go.sum,target=go.sum \
+    --mount=type=bind,source=../go.mod,target=go.mod \
+    --mount=type=bind,source=../go.sum,target=go.sum \
     go mod download -x
 
 # ソースをビルド
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=bind,source=backend,target=. \
-    CGO_ENABLED=0 GOOS=linux go build -o /bin/server ./cmd/server
+    --mount=type=bind,source=..,target=. \
+    CGO_ENABLED=1 GOOS=linux go build -o /bin/server ./cmd/server
 
 FROM debian:bookworm-slim AS final
 
 ARG UID=10001
 
-# 非rootユーザー作成
 RUN adduser \
     --disabled-password \
     --gecos "" \
