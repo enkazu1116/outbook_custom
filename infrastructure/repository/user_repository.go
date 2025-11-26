@@ -39,7 +39,10 @@ func (r *UserRepositoryImpl) ExistsByEmail(cxt context.Context, email string) (b
 	var count int64
 
 	// メールアドレスが一致するEntityの数を取得
-	if err := r.db.WithContext(cxt).Model(&userEntity.User{}).Where("email = ?", email).Count(&count).Error; err != nil {
+	if err := r.db.WithContext(cxt).
+		Model(&userEntity.User{}).
+		Where("email = ? AND delete_flag = ?", email, false).
+		Count(&count).Error; err != nil {
 		return false, err
 	}
 
@@ -52,8 +55,8 @@ func (r *UserRepositoryImpl) ExistsByEmail(cxt context.Context, email string) (b
 // レシーバー: ユーザーリポジトリオブジェクト
 func (r *UserRepositoryImpl) FindByUser(cxt context.Context, id string, name string, email string) (*userEntity.User, error) {
 
-	conditions := make([]string, 0, 3)
-	values := make([]interface{}, 0, 3)
+	conditions := make([]string, 0, 4)
+	values := make([]interface{}, 0, 4)
 
 	if id != "" {
 		conditions = append(conditions, "id = ?")
@@ -67,6 +70,10 @@ func (r *UserRepositoryImpl) FindByUser(cxt context.Context, id string, name str
 		conditions = append(conditions, "email = ?")
 		values = append(values, email)
 	}
+
+	// 論理削除されていないユーザーのみ対象
+	conditions = append(conditions, "delete_flag = ?")
+	values = append(values, false)
 
 	if len(conditions) == 0 {
 		return nil, errors.New("no search criteria provided")
@@ -97,5 +104,9 @@ func (r *UserRepositoryImpl) UpdateUser(cxt context.Context, user *userEntity.Us
 // 返り値: 削除に失敗した場合はエラー
 // レシーバー: ユーザーリポジトリオブジェクト
 func (r *UserRepositoryImpl) DeleteUser(cxt context.Context, id string) error {
-	return r.db.WithContext(cxt).Model(&userEntity.User{}).Where("id = ?", id).Delete(&userEntity.User{}).Error
+	// 物理削除ではなく論理削除（delete_flag を立てる）のみに変更
+	return r.db.WithContext(cxt).
+		Model(&userEntity.User{}).
+		Where("id = ?", id).
+		Update("delete_flag", true).Error
 }

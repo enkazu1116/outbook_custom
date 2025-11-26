@@ -2,8 +2,9 @@ package db
 
 import (
 	"database/sql"
-	"log"
 	"os"
+
+	"app/infrastructure/logger"
 
 	libsql "github.com/tursodatabase/libsql-client-go/libsql"
 	"gorm.io/driver/sqlite"
@@ -17,13 +18,13 @@ func NewConnection() *gorm.DB {
 	tursoAuthToken := os.Getenv("TURSO_AUTH_TOKEN")
 
 	if tursoURL == "" || tursoAuthToken == "" {
-		log.Fatal("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN environment variables are required")
+		logger.FatalJp("環境変数 TURSO_DATABASE_URL と TURSO_AUTH_TOKEN は必須です")
 	}
 
 	// Tursoコネクターの作成
 	connector, err := libsql.NewConnector(tursoURL, libsql.WithAuthToken(tursoAuthToken))
 	if err != nil {
-		log.Fatalf("failed to create Turso connector: %v", err)
+		logger.FatalJp("Turso への接続コネクター作成に失敗しました: %v", err)
 	}
 
 	// database/sqlでTursoに接続
@@ -31,18 +32,18 @@ func NewConnection() *gorm.DB {
 
 	// 接続テスト
 	if err := sqlDB.Ping(); err != nil {
-		log.Fatalf("failed to ping database: %v", err)
+		logger.FatalJp("データベースへの接続確認に失敗しました: %v", err)
 	}
 
 	// GORMでTursoを使用
 	db, err := gorm.Open(sqlite.Dialector{Conn: sqlDB}, &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
+		logger.FatalJp("データベース接続の初期化に失敗しました: %v", err)
 	}
 
 	// マイグレーション
 	if err := db.AutoMigrate(&entity.User{}); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
+		logger.FatalJp("ユーザーテーブルのマイグレーションに失敗しました: %v", err)
 	}
 
 	return db

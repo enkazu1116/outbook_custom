@@ -2,8 +2,9 @@ package services
 
 import (
 	"context"
-	"errors"
 	"testing"
+
+	"app/internal/domain/user/value_obj"
 )
 
 func TestFindUserValidation(t *testing.T) {
@@ -16,7 +17,7 @@ func TestFindUserValidation(t *testing.T) {
 		err   error
 	}{
 		"all empty": {
-			err: errors.New(ErrorMessage["search_required"]),
+			err: value_obj.UserSearchRequiredError,
 		},
 		"id only": {
 			id: "user-1",
