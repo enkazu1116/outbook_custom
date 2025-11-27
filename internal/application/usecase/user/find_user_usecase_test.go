@@ -4,6 +4,8 @@ import (
 	userdto "app/internal/application/dto/user"
 	"app/internal/domain/user/entity"
 	repo "app/internal/domain/user/repository"
+	"app/internal/domain/user/value_obj"
+	testlogger "app/internal/test/logger"
 	"context"
 	"errors"
 	"testing"
@@ -11,13 +13,25 @@ import (
 
 const searchRequiredMessage = "検索条件を1つ以上指定してください。"
 
+// TestFindUserUsecase_FindUser はユーザー検索ユースケースの動作を検証します。
+//
+// バリデーションエラー・リポジトリ成功・リポジトリエラーの各シナリオを通じて、
+// 「どのような入力のときに、ユースケースがどのようにリポジトリを呼び出すべきか」を
+// 一目で思い出せるようにすることを意図しています。
 func TestFindUserUsecase_FindUser(t *testing.T) {
 	t.Parallel()
+
+	logger := testlogger.New(t)
+	logger.Info(value_obj.UserUsecaseTestStartInfo.Message())
+	defer logger.Info(value_obj.UserUsecaseTestSuccessInfo.Message())
 
 	ctx := context.Background()
 
 	t.Run("validation error", func(t *testing.T) {
 		t.Parallel()
+
+		logger := testlogger.New(t)
+		logger.Info("FindUserUsecase バリデーションエラーケース開始")
 
 		uc := NewFindUserUsecase(&testUserRepository{})
 
@@ -32,6 +46,9 @@ func TestFindUserUsecase_FindUser(t *testing.T) {
 
 	t.Run("repository success", func(t *testing.T) {
 		t.Parallel()
+
+		logger := testlogger.New(t)
+		logger.Info("FindUserUsecase リポジトリ成功ケース開始")
 
 		expected := &entity.User{ID: "user-1", Name: "Alice", Email: "alice@example.com"}
 		mock := &testUserRepository{
@@ -56,6 +73,9 @@ func TestFindUserUsecase_FindUser(t *testing.T) {
 
 	t.Run("repository error", func(t *testing.T) {
 		t.Parallel()
+
+		logger := testlogger.New(t)
+		logger.Info("FindUserUsecase リポジトリエラーケース開始")
 
 		expectedErr := errors.New("db error")
 		mock := &testUserRepository{

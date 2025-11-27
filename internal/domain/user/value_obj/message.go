@@ -106,6 +106,30 @@ var (
 		code:    "user.search.required",
 		message: "検索条件を1つ以上指定してください。",
 	}
+
+	// --- テスト用メッセージ ---
+
+	// UserDomainTestStartInfo はユーザドメイン層のテスト開始を表す情報メッセージです。
+	UserDomainTestStartInfo = InfoMessage{
+		code:    "test.user.domain.start",
+		message: "ユーザドメイン層のテストを開始します。",
+	}
+
+	// UserDomainTestSuccessInfo はユーザドメイン層のテスト成功を表す情報メッセージです。
+	UserDomainTestSuccessInfo = InfoMessage{
+		code:    "test.user.domain.success",
+		message: "ユーザドメイン層のテストが正常に完了しました。",
+	}
+
+	// UserUsecaseTestStartInfo はユーザユースケース層のテスト開始を表す情報メッセージです。
+	UserUsecaseTestStartInfo = InfoMessage{
+		code:    "test.user.usecase.start",
+		message: "ユーザユースケース層のテストを開始します。",
+	}
+
+	// UserUsecaseTestSuccessInfo はユーザユースケース層のテスト成功を表す情報メッセージです。
+	UserUsecaseTestSuccessInfo = InfoMessage{
+		code:    "test.user.usecase.success",
+		message: "ユーザユースケース層のテストが正常に完了しました。",
+	}
 )
-
-
