@@ -18,15 +18,38 @@ type User = {
 function App() {
 
   const [users, setUsers] = useState<User[]>([]);
-  const handleCreateUser = (input: { name: string; email: string; password: string }) => {
-    // TODO: API 呼び出し
+  const handleCreateUser = async (input: { name: string; email: string; password: string }) => {
+    const res = await fetch('/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...input,
+        bio: '',
+      }),
+    });
+
+    if (!res.ok) {
+      // backendは {error: "..."} を返す想定
+      let message = 'ユーザー作成に失敗しました';
+      try {
+        const data = (await res.json()) as { error?: string };
+        if (data?.error) message = data.error;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    // 現状 backend が作成したユーザーを返さないため、UIは仮の1件を追加（必要なら後で一覧API実装へ）
     setUsers((prev) => [
-      ...prev, 
-      { id: Date.now().toString(), 
-        ...input, 
-        createdAt: new Date().toISOString(), 
-        updatedAt: new Date().toISOString() 
-      }]);
+      ...prev,
+      {
+        id: Date.now().toString(),
+        ...input,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
   };
 
   return (
@@ -40,7 +63,7 @@ function App() {
           <BulkOperations />
 
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-            <UsersTable />
+            <UsersTable users={users} />
             <CreateUserCard onCreate={handleCreateUser} />
           </div>
 
